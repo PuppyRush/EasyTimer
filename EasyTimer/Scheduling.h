@@ -24,6 +24,32 @@
 namespace easytimer {
 
 
+struct default_sche 
+{
+};
+
+struct user_trigger 
+{
+};
+
+
+template<class _Iter>
+struct scheduling_traits
+{
+	// get traits from iterator _Iter
+	typedef typename _Iter::iterator_category iterator_category;
+};
+
+
+template<class _Iter> inline
+typename scheduling_traits<_Iter>::iterator_category _Iter_cat(const _Iter&)
+{
+	// return category from iterator argument
+	typename scheduling_traits<_Iter>::iterator_category _Cat;
+	return (_Cat);
+}
+
+
 struct SchedulingBuilderBase;
 
 
@@ -45,7 +71,8 @@ public:
 		daily,
 		weekly,
 		monthly,
-		manually
+		manually,
+		user_trigger
 	};
 
 	struct DateTime
@@ -56,6 +83,9 @@ public:
 		easytimer::hours hours{ 0 };
 		easytimer::minutes minutes{ 0 };
 		easytimer::seconds seconds{ 0 };
+
+		DateTime()
+		{}
 
 		DateTime(date::DateInfo da, int h, int m, int s)
 			:dateset(da),hours(h), minutes(m), seconds(s)
@@ -121,7 +151,7 @@ public:
 	protected:
 		using time_point = typename Scheduling::time_point;
 
-		SchedulingBuilderBase() = delete;
+		SchedulingBuilderBase() {}
 
 		SchedulingBuilderBase(const Scheduling::DateTime date , Scheduling::repeat rep)
 			:m_startDatetime(date), m_repeated(rep)
@@ -178,8 +208,6 @@ public:
 		Scheduling::repeat m_repeated;
 	};
 
-
-
 	Scheduling() = delete;
 
 	Scheduling(const callback_fn fn, void* arg, SchedulingBuilderBase& schedulingBuilder)
@@ -190,20 +218,7 @@ public:
 
 	void start()
 	{
-		for (const auto& tm : m_triggerTimePoint)
-		{
-			if (tm < Base::now())
-			{
-				continue;
-			}
-			else if (tm > m_expireTime)
-			{
-				continue;
-			}
-			Countdown<rep> cd{ m_callback, m_fnArg, tm };
-			cd.start();
-			cd.join();
-		}
+		start(m_startType);
 	}
 
 	//date시점을 time_point로 변환
@@ -223,6 +238,9 @@ public:
 		return cv_tp;
 	}
 
+protected:
+	default_base m_startType{ default_sche{} };
+
 private:
 
 	std::string m_description;
@@ -230,6 +248,33 @@ private:
 	time_point m_expireTime{ std::numeric_limits<time_point>::max() };
 	callback_fn m_callback;
 	void* m_fnArg;
+
+
+private:
+
+	void start(default_sche)
+	{
+		for (const auto& tm : m_triggerTimePoint)
+		{
+			if (tm < Base::now())
+			{
+				continue;
+			}
+			else if (tm > m_expireTime)
+			{
+				continue;
+			}
+			Countdown<rep> cd{ m_callback, m_fnArg, tm };
+			cd.start();
+			cd.join();
+		}
+	}
+
+	void start(user_trigger)
+	{
+
+	}
+
 };
 
 
@@ -238,8 +283,6 @@ struct SchedulingBuilder : public Scheduling::SchedulingBuilderBase
 {
 public:
 	using Base = SchedulingBuilderBase;
-
-	SchedulingBuilder() = delete;
 
 	SchedulingBuilder(const Scheduling::DateTime date)
 		:Base(date, Scheduling::repeat::just_one)
@@ -255,6 +298,9 @@ public:
 
 protected:
 
+	SchedulingBuilder()
+	{}
+
 	virtual Scheduling::triggerQueue getTimePoints() override
 	{
 		Scheduling::triggerQueue q;
@@ -263,9 +309,39 @@ protected:
 		return q;
 	}
 
-
+	default_base m_startType{ default_sche{} };
 };
  
+struct SchedulingBuilderUserTrigger : public SchedulingBuilder
+{
+public:
+	using Base = SchedulingBuilder;
+	
+	SchedulingBuilderUserTrigger()
+		:Base()
+	{
+		m_repeated = Scheduling::repeat::user_trigger;
+		m_startType = user_trigger{};
+	}
+
+	template <class T>
+	void setTrigger(const T fn)
+	{
+	}
+
+
+protected:
+
+	virtual Scheduling::triggerQueue getTimePoints() override
+	{
+		return Scheduling::triggerQueue{};
+	}
+
+
+};
+
+
+
 struct SchedulingBuilderManually : public SchedulingBuilder
 {
 public:
