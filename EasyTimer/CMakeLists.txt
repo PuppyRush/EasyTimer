@@ -38,15 +38,15 @@ ${BOOST_INCLUDE_DIR}
 
 
 # 이 프로젝트의 실행 파일에 소스를 추가합니다.
-add_executable (EasyTimer EasyTimer.cpp EasyTimer.h Countdown.h
+add_executable (EasyTimer 
+                EasyTimer.cpp 
+                Countdown.h
                 Date.h
                 ElapsedTimer.h
                 Scheduling.h
                 ScopeTimer.h
                 Stopwatch.h
                 Times.h
-                Type.h
-                TypeTraits.h
                 )
 
 # TODO: 필요한 경우 테스트를 추가하고 대상을 설치합니다.

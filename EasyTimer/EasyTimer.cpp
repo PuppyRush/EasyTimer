@@ -1,8 +1,6 @@
 ﻿// EasyTimer.cpp : 애플리케이션의 진입점을 정의합니다.
 //
 
-#include "EasyTimer.h"
-
 #include "ScopeTimer.h"
 #include "ElapsedTimer.h"
 #include "Stopwatch.h"
